@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC>
+<html>
+<head>
+	<meta charset="UTF-8">
+	<meta name="description" content="United States gun and firearm killing data visualization by Periscopic">
+	<meta property="og:description" content="U.S. gun murders in 2010: you haven't seen numbers like this before: http://guns.periscopic.com/ by @periscopic" >
+    <meta property="og:image" content="http://guns.periscopic.com/img/open_graph.png">
+	<!--
+	Developed by Periscopic
+	Visualization produced using <a href="http://createjs.com/#!/EaselJS">EaselJS</a>.
+	Animation driven by <a href= "http://www.greensock.com/gsap-js/">GreenSock Animation Platform</a>.
+	Shapes provided by Pierre Bezier, with help from Paul de Casteljau.
+	-->
+	<title>U.S. Gun Murders in 2010</title>
+	<link rel= "stylesheet" type="text/css" href="gunviz.css" media= "all">
+	<link href='http://fonts.googleapis.com/css?family=Lato:300,400,700,900,300italic,400italic,700italic,900italic' rel='stylesheet' type='text/css'>
+	<script type="text/javascript" src="libraries/dictionary.js"></script>
+	<script type="text/javascript" src="libraries/easeljs-0.5.0.min.js"></script>
+	<script type="text/javascript" src="libraries/TweenMax.min.js"></script>
+	<script type="text/javascript" src="libraries/BezierPlugin.min.js"></script>
+	<script type="text/javascript" src="libraries/Tooltip.js"></script>
+	<script type="text/javascript" src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.3/jquery.min.js"></script>
+
+	<script type="text/javascript">
+
+	  var _gaq = _gaq || [];
+	  _gaq.push(['_setAccount', 'UA-3509031-10']);
+	  _gaq.push(['_trackPageview']);
+
+	  (function() {
+	    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+	    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+	    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+	  })();
+
+</script>
+</head>
+
+<body>
+<div id="container" class="intro">
+	<div class="header">
+		<h1>U.S. GUN MURDERS IN 2010</h1><h2 id="monthLabel"></h2>
+	</div>
+	<div id="peoplebox">
+	<span id="peoplecount" onselectstart="return false;">0</span>
+	<br>
+	<span id="peoplelabel" onselectstart="return false;">PEOPLE KILLED</span>
+	</div>
+	<div id="yearsbox">
+	<span id="yearscount" onselectstart="return false;">0</span>
+	<br>
+	<span id="yearlabel" onselectstart="return false;">STOLEN YEARS</span>
+	</div>
+	<img id="questionMark" src="img/questionMark.gif" />
+
+	<div id="c">
+		<canvas id="stage" width="940" height="625"></canvas>
+		<canvas id="distributionView" width = "940" height="625"></canvas>
+		<canvas id="overstage" width="940" height="625"></canvas>
+	</div>
+
+	<span class= "leftWhiteLabel percent" id= "pctTop" onselectstart="return false;">0%</span>
+	<!--span class= "leftWhiteLabel number" id= "numTop" onselectstart="return false;">0</span-->
+	<span class= "leftWhiteLabel filterName" id= "topFilter"></span>
+
+	<!--<button id= "distSwitch" onclick="gunviz.testMouseDown('axismimic')" onmouseover="gunviz.delayMove('axismimic')" onmouseout="gunviz.delayMove('notaxismimic')">+</button>-->
+
+	<hr class="axis" style="top: 346px; border-width: 0px 2px 1px 2px;">
+	<hr class="axis" style="top: 350px; border-width: 0px 2px 0px 2px;">
+	<span class="axisLabel" style="left: 50px;">AGE 0</span>
+	<span class="axisLabel" style="left: 964px;">100</span>
+
+	<div id="distSwitch"></div>
+
+	<span class= "leftWhiteLabel percent" id= "pctBot" onselectstart="return false;">0%</span>
+	<!--span class= "leftWhiteLabel number" id= "numBot" onselectstart="return false;">0</span-->
+	<span class= "leftWhiteLabel filterName" id= "botFilter"></span>
+
+	<span class= "rightWhiteLabel" id= "topHistLabel"></span>
+
+	<!--img id="replay" src="./img/replay.png" onclick="gunviz.init()"/-->
+
+	<ul id= "menuBox">
+		<!--li>
+			<a class="menuTitle" onselectstart="return false;" onclick="gunviz.sortArrays('nofilter')">
+				NO FILTER
+			</a>
+		</li-->
+		<li>
+			<a data="GUN TYPE" class="menuTitle" id="guns" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				GUN TYPE
+			</a>
+			<ul id= "Group1" class= "menuGroup">
+				<li id= "handgunButton" onclick="gunviz.sortArrays('handgun', $(this))">HANDGUN</li>
+				<li onclick="gunviz.sortArrays('rifle', $(this))">RIFLE</li>
+				<li onclick="gunviz.sortArrays('shotgun', $(this))">SHOTGUN</li>
+				<li onclick="gunviz.sortArrays('other', $(this))">TYPE UNKNOWN</li>
+			</ul>
+		</li>
+		<li>
+			<a data="ETHNICITY" class="menuTitle" id="ethnicities" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				ETHNICITY
+			</a>
+			<ul id= "Group2" class= "menuGroup">
+				<li id= "blackButton" onclick="gunviz.sortArrays('black', $(this))">BLACK</li>
+				<li onclick="gunviz.sortArrays('white', $(this))">WHITE</li>
+				<li onclick="gunviz.sortArrays('amindian', $(this))">NATIVE</li>
+				<li onclick="gunviz.sortArrays('asian', $(this))">ASIAN</li>
+			</ul>
+		</li>
+		<li>
+			<a data="SEX" class="menuTitle" id="sexes" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				SEX
+			</a>
+			<ul id= "Group3" class= "menuGroup">
+				<li id= "maleButton" onclick="gunviz.sortArrays('male', $(this))">MEN</li>
+				<li onclick="gunviz.sortArrays('female', $(this))">WOMEN</li>
+			</ul>
+		</li>
+		<li>
+			<a data="AGE GROUP" class="menuTitle" id="ages" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				AGE GROUP
+			</a>
+			<ul id= "Group4" class= "menuGroup">
+				<li onclick="gunviz.sortArrays('child', $(this))">CHILDREN 0-18</li>
+				<li id= "yadultButton" onclick="gunviz.sortArrays('yadult', $(this))">YOUNG ADULT 0-30</li>
+			</ul>
+		</li>
+		<li>
+			<a data="REGION" class="menuTitle" id="regions" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				REGION
+			</a>
+			<ul id= "Group5" class= "menuGroup">
+				<li onclick="gunviz.sortArrays('midwest', $(this))">MIDWEST</li>
+				<li onclick="gunviz.sortArrays('northwest', $(this))">NORTHWEST</li>
+				<li onclick="gunviz.sortArrays('northeast', $(this))">NORTHEAST</li>
+				<li onclick="gunviz.sortArrays('southwest', $(this))">SOUTHWEST</li>
+				<li onclick="gunviz.sortArrays('southeast', $(this))">SOUTHEAST</li>
+			</ul>
+		</li>
+		<li>
+			<a data="MULTIPLE KILLS" class="menuTitle" id="victims" onselectstart="return false;" onclick="gunviz.sortArrays('', $(this))">
+				MULTIPLE KILLS
+			</a>
+			<ul id= "Group6" class= "menuGroup">
+				<li onclick="gunviz.sortArrays('single', $(this))">SINGLE VICTIM</li>
+				<li onclick="gunviz.sortArrays('multiple', $(this))">MULTIPLE VICTIMS</li>
+			</ul>
+		</li>
+	</ul>
+
+	<div id= "findings">
+		<div class="headline">An Examination of the U.S. Federal Bureau of Investigation&rsquo;s Uniform Crime Report</div>
+
+		<hr id="findingsRule">
+		<div class="fLeft">
+			<div class="find">
+				<h1>69% OF THESE VICTIMS WERE KILLED WITH A HANDGUN</h1>
+				<img class="viewSetter" data="handgun" src="img/findHandgun.gif" />
+				<p>According to the FBI’s Uniform Crime Reports (UCR), 69% of all gun murders in 2010 were committed with a handgun. This figure is especially poignant as we debate the effect of banning assault rifles. While banning high-capacity magazines would affect the number of bullets loaded into a semi-automatic handgun, this and other proposed gun policies would have no direct affect on the availability of murderers’ weapon of choice—the handgun.</p>
+			</div>
+			<div class="find">
+				<h1>57% OF GUN MURDER VICTIMS WERE BLACK</h1>
+				<img class="viewSetter" data="black" src="img/findBlack.gif" />
+				<p>While black people <a href='http://www.census.gov/2010census' target="new"/>accounted for 13.6% of the U.S. population in 2010</a>, they made up over half of the gun murder victims. In contrast, white people made up 78.1% of the total population, but 41% of the murder victims. The burden of gun violence falls disproportionately upon the black population of America.</p>
+			</div>
+		</div>
+		<div class="fRight">
+			<div class="find">
+				<h1>58% OF THOSE KILLED WERE 30 OR YOUNGER</h1>
+				<img class="viewSetter" data="yadult" src="img/findChildren.gif" />
+				<p>In 2010, 5,597 people (58% of murder victims) were killed at or before the age of 30. The average American lives to the age of 78, so that’s at least 48 years of life un-lived by the average gun victim. 1,091 people (11%) were killed at or under the age of 18—not even adults. Killed before such milestones as marriage, children, grandchildren, or a career, 58% of the people murdered with a gun had barely begun to live their lives.</p>
+			</div>
+			<div class="find">
+				<h1>85% OF GUN MURDER VICTIMS WERE MALE</h1>
+				<img class="viewSetter" data="male" src="img/findMale.gif" />
+				<p><a href='http://www.hsph.harvard.edu/hicrc/firearms-research/misperceptions/' target="new">It has been argued</a> that stricter gun control would reduce violent crimes against women. At 85% of the total victims, 8,140 men were killed with a gun in 2010. Although violent crimes against women are an important and international issue, this data reflects another very important, but less widely recognized public health issue-the risk to men of violent gun crime.</p>
+			</div>
+		</div>
+	</div>
+
+	<div id= "blurb" class="intro">
+		<span>A public service provided by</span>
+		<a href="http://www.periscopic.com/"><img id="logo" src="img/perilogo.png" /></a>
+		<span id="methodsClick" onclick="uiTooltips.makeMethods()">Methods and Sources</span>
+		<span class="social">
+		
+		<a id="fb" href="http://facebook.com/sharer.php?u=http%3A%2F%2Fguns.periscopic.com%2Ffb%2F" target="_blank"><img id="fb" src="img/fb.png" /></a>
+		
+		<a id="twit" href="http://twitter.com/share?text=U.S.%20gun%20murders%20in%202010%3A%20you%20haven%27t%20seen%20numbers%20like%20this%20before%20-%20by%20%40periscopic&url=http%3A%2F%2Fguns.periscopic.com%2F" target="_blank"><img src="img/twit.png" /></a>
+		</span>
+	</div>
+</div>
+<script>
+	var periTooltip = periscopic.ui.Tooltip;
+	//periTooltip.DEFAULT_STROKE_THICKNESS = 1;
+	periTooltip.DEFAULT_STROKE_COLOR = 'rgba(0,0,0,0.2)';
+	periTooltip.DEFAULT_RADIUS = 5;
+	periTooltip.DEFAULT_BACKGROUND_COLOR = 'rgba(62,62,62,0.85)';
+	periTooltip.DEFAULT_TIP_WIDTH = 4;
+	periTooltip.DEFAULT_COPY_CLASS = 'tooltipCopy';;
+
+
+	function showList(e) {
+		$(this).children("ul").addClass("shownList");
+	}
+
+	function hideList() {
+		$(this).children("ul").removeClass("shownList");
+	}
+
+	function moveOnList(e) {
+		e.stopPropagation();
+	}
+
+	$("#menuBox > li").hover(showList, hideList).click(hideList).mousemove(moveOnList);
+
+	function stop() {
+		createjs.Ticker.removeAllListeners();
+		TweenMax.killAll();
+	}	
+
+	function showCanvas(canvasid) {
+		document.getElementById(canvasid).style.display = "block";
+	}	
+
+	function hideCanvas(canvasid) {
+		document.getElementById(canvasid).style.display = "none";
+	}	
+
+	function exportAndView(canvasid) {
+	   var data = document.getElementById(canvasid).toDataURL("image/png");
+	   var screenshot = document.createElement("img")
+	   screenshot.src = data;
+	   $(document.body).html(screenshot);
+	}	
+
+	var activePersonTooltip;
+
+	//declare mouseover delay here so the yearsTooltip has access to it
+	var delayWatcher;
+
+	var uiTooltips = (function() {
+
+		var yearsTooltip = new periscopic.ui.Tooltip();
+
+		$("#yearsbox").hover(makeYearsLabel, removeYearsLabel).mousemove(moveOnList);
+		$("#questionMark").hover(makeYearsLabel, removeYearsLabel).mousemove(moveOnList);
+
+		function makeYearsLabel(e) {
+			clearTimeout(delayWatcher);
+
+			var w = $("#yearsbox").width();
+			var h = $("#yearsbox").height();
+			var numPpl = $("#peoplecount").html();	
+
+			yearsTooltip.copy("We determine the potential lifespans of victims using U.S. mortality data from the World Health Organization. Age and cause of death predictions are based on the likelihood of death at different ages.");
+
+			yearsTooltip.horizontal(false)
+			.mirror(false)
+			.copyClass("bigTooltip")
+			.x(w - 10).y(h + 5);
+
+			yearsTooltip.el()
+				.appendTo("#yearsbox");
+
+			yearsTooltip.setTipPosition(1).shrinkWidth(250);
+
+			yearsTooltip.render().position();
+
+			yearsTooltip.el().show();
+
+			e.stopPropagation();
+		}
+
+		function removeYearsLabel() {
+			yearsTooltip.el().hide();
+		}
+
+		var mTooltip = new periscopic.ui.Tooltip();
+
+		mTooltip.horizontal(false)
+			.mirror(false)
+			.copyClass("methodsTooltip");
+
+		function makeMethods() {
+			var w = $("#container").width();
+			var h = $("#container").height();
+
+
+			var copyText = [
+				"<div class='close'></div>",
+				"<h1>Our Methods and Sources</h1>",
+				"<p>Our data comes from the FBI's <a href='http://www.fbi.gov/about-us/cjis/ucr/ucr' target='new'>Uniform Crime Reports</a>, which include voluntarily-reported data from police precincts across the country. In 2007, according to the FBI, law enforcement agencies active in the UCR Program represented more than 285 million US inhabitants—94.6% of the total population. This special dataset is at the raw, or incident, level—containing details of each person who was killed, including their age, gender, race, relationship to killer, and more.</p>",
+				"<br>",
+				"<p>For the gray lines, we calculated alternate stories for the people killed with guns using data from the <a href='http://data.un.org/Data.aspx?d=POP&f=tableCode%3A105' target='new'>World Health Organization</a>. To calculate an alternate story, we first performed an age prediction weighted according to the age distribution of US deaths. Using this age, we then predicted a likely cause of death at that age. We do not adjust for life-expectancy differences between demographic groups, as we have not yet found data to that extent. We used data from 2005, the most recent year available.</p>",
+				"<br>",
+				"<p>A huge thank you to <a href='http://www.jeromecukier.net/' target='new'>Jerome Cukier</a> for researching and sharing this amazing dataset with us. Please take a look at <a href='http://www.jeromecukier.net/projects/crime/murders.html' target='new'>Jerome's own visualizations of this data</a>. And thank you to the FBI Multimedia Productions group for responding quickly to our questions.</p>"
+			];
+
+			mTooltip.copy(copyText.join(""))
+			.setTipWidth(0)
+			.setTipPosition(0)
+			.x((w - 450) / 2).y(h - 391 - 50);
+
+			var div = document.createElement('div')
+			div.setAttribute("id", "shadow")
+			div.style.backgroundColor = "rgba(20,20,20,0.8)";
+			div.style.width = w;
+			div.style.height = h;
+			div.style.position = "absolute";
+			div.style.top = "0px";
+			div.style.zIndex = 2;
+			document.getElementById("container").appendChild(div);
+
+			mTooltip.el()
+			.appendTo("#container");
+
+			mTooltip.render().position();
+			mTooltip.el().show();
+
+			$("#shadow").click(removeMethods);		
+			mTooltip.el().find('.close').click(removeMethods);		
+		}
+
+		function removeMethods() {
+			mTooltip.el().hide();
+			$("#shadow").remove();
+		}
+
+		return {
+			makeYearsLabel : makeYearsLabel,
+			removeYearsLabel : removeYearsLabel,
+			makeMethods : makeMethods,
+			removeMethods : removeMethods
+		}
+	}());
+
+
+</script>
+
+<script type="text/javascript" src="gunviz.js"></script>
+
+</body>
+</html>
