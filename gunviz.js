@@ -9,16 +9,19 @@ var stage, overstage, distStage;
 var	canvas = document.getElementById("stage");
 var overlay = document.getElementById("overstage");
 var distributionCanvas = document.getElementById("distributionView");
-var life_strokeStyle = 1;
+var life_strokeStyle = 2;
 //var life_strokeColor = ["rgba(2,97,254,0.25)", "rgba(1,24,200,0.25)", "rgba(58,11,178,0.25)", "rgba(64,0,117,0.25)"];
 var life_strokeColor = ["rgba(164,94,20,0.15)","rgba(149,74,1,0.15)","rgba(255,103,2,0.15)","rgba(255,215,0,0.15)","rgba(244,205,59,0.15)","rgba(241,125,1,0.15)","rgba(186,66,1,0.15)","rgba(224,69,0,0.15)","rgba(253,167,31,0.15)","rgba(237,132,0,0.15)]"];
-var post_life_strokeStyle = 1;
-var post_life_strokeColor = "rgba(62,34,117,1)";
-var afterlife_strokeStyle = 1;
-var afterlife_strokeColor = ["rgba(200,200,200,0.10)","rgba(150,150,150,0.10)","rgba(100,100,100,0.10)","rgba(170,170,170,0.10)","rgba(120,120,120,0.10)"];
+var post_life_strokeStyle = 2;
+var post_life_strokeColor = "rgba(62,34,117,0.81)";
+var afterlife_strokeStyle = 2;
+var afterlife_strokeColor = ["rgba(200,200,200,0.20)","rgba(150,150,150,0.20)","rgba(100,100,100,0.20)","rgba(170,170,170,0.20)","rgba(120,120,120,0.20)"];
 var beziers = [];
+var debugdot = true;
 var curveDict;
 var curves; //loaded data
+var start_curves = 10; //number of start curves that should drawn slowly (>2)
+var total_curves = 250; //number of total curves to be plotted.
 var bkgnd, backtransform;
 var tooltip = new createjs.Container();
 var axis = new createjs.Container();
@@ -38,10 +41,10 @@ var	padding = 10;
 var	h = canvas.getAttribute("height");
 var	w = canvas.getAttribute("width");
 //vertical space (divide by 2 to get top/bottom margin);
-var arcOffsetV = 30;
+var arcOffsetV = 80;
 var arcSpaceHeight = h - arcOffsetV;
 //horizontal space (divide by 2 to get left/right margin);
-var arcOffsetH = 64;
+var arcOffsetH = 24;
 var arcSpaceWidth = w - arcOffsetH;
 var distributionPath;
 var peopleCount = 0;
@@ -57,6 +60,16 @@ var introTtip = [];
 var playingAnimation = true;
 var isIntroComplete = false;
 var currentGroupNum = null;
+// timmings
+var intro_headFoot = 1500;
+    intro_axis = 1500,
+    intro_ui = 1500,
+    intro_canvas = 500,
+    intro_headFoot_timeout = 500,
+    intro_axis_timeout = 2000,
+    intro_ui_timeout = 3500,
+    intro_canvas_timeout = 1000,
+    intro_init_timeout = 5100;
 
 //kick off the app
 loadData();
@@ -148,6 +161,15 @@ function initData() {
 			return a.order - b.order;
 		}
 	})
+  var i = 1;
+  var aux = curves;
+  curves = []
+  aux.forEach(function(curve) {
+    if (i<=250) {
+      curves.push(curve);
+    }
+    i = i+1
+  });
 	//initialize current and most recent x and y values on curves, choose colors for each curve
 	curves.forEach(function(curve) {
 		curve.x = arcOffsetH / 2;
@@ -185,27 +207,27 @@ INITIALIZE
 function intro() {
 	//called when the body loads, loads the HTML;
 	function headFoot() {
-		$(".header").fadeIn(1500);
+		$(".header").fadeIn(intro_headFoot);
 	}
 
 	function axis() {
-		$(".axis, .axisLabel").fadeIn(1500);
+		$(".axis, .axisLabel").fadeIn(intro_axis );
 	}
 
 	function ui() {
-		$("#peoplebox, #yearsbox, #distSwitch, #menuBox, #blurb").fadeIn(1500);
+		$("#peoplebox, #yearsbox, #distSwitch, #menuBox, #blurb").fadeIn(intro_ui );
 	}
 
 	function canvas() {
-		$("#c").fadeIn(500);
+		$("#c").fadeIn(intro_canvas);
 	}
 
 	//show all the UI stuff, begin the intro animation.
-	setTimeout(headFoot, 500);
-	setTimeout(axis, 2000);
-	setTimeout(ui, 3500);
-	setTimeout(canvas, 1000);
-	setTimeout(init, 5100);
+	setTimeout(headFoot, intro_headFoot_timeout);
+	setTimeout(axis, intro_axis_timeout);
+	setTimeout(ui, intro_ui_timeout);
+	setTimeout(canvas, intro_canvas_timeout);
+	setTimeout(init, intro_init_timeout);
 }
 
 /*function distStageClick(click) {
@@ -233,8 +255,8 @@ function init() {
 	//for when calling init() a second time
 	stage.clear();
 	overstage.enableMouseOver(5);
-	overstage.onMouseDown = testMouseDown;
-	overstage.onMouseMove = delayMove;
+	//overstage.onMouseDown = testMouseDown;
+	//overstage.onMouseMove = delayMove;
 
 	axis = makeAxis();
 
@@ -295,12 +317,16 @@ function init() {
 			wait += 0;
 		} else if (i == 1) {
 			wait += calcDuration(0);
-		} else if (i < 5) {
-			wait += 120;
-		} else if (i === 5) {
-			wait += calcDuration(4) + 60;
+		} else if (i == 2) {
+			wait += calcDuration(i);
+		} else if (i <= start_curves) {
+			wait += calcDuration(Math.pow(i,3));
+		} else if (i < 250) {
+			wait += calcDuration(Math.pow(i,Math.sqrt(i)));
+		} else if (i === 250) {
+			wait += calcDuration(4) + 15;
 		} else {
-			wait += calcDelay(i);
+			wait += calcDelay(Math.log(i));
 		}
 
 		ratio = bezierCurve[2][0];
@@ -369,7 +395,6 @@ function init() {
 		$swtch.mouseover(onOver).mouseout(onOut);
 
 	}());
-
 }
 
 /***********************************
@@ -393,12 +418,12 @@ function tick() {
 
 		temp_curve = activecurves[i];
 		age = activecurves[i].age;
-		if (i >= 5) {
+		if (i >= 250) {
 			color = activecurves[i].lifecolor;
 		} else {
 			color = activecurves[i].lifecolor.slice(0, -4)+"1)";
 		}
-		if (i >= 5) {
+		if (i >= 250) {
 			aftercolor = activecurves[i].afterlifecolor;
 		} else {
 			aftercolor = activecurves[i].afterlifecolor.slice(0, -4)+"1)";
@@ -475,7 +500,7 @@ function tick() {
 				.bezierCurveTo(temp_curve[1].x, temp_curve[1].y, temp_curve[2].x, temp_curve[2].y, temp_curve[3].x, temp_curve[3].y)
 				heartbeats.addChild(activecurves[i].heartbeat);
 
-				if (i < 5 && !("dot" in activecurves[i])) {
+				if (i < start_curves && !("dot" in activecurves[i])) {
 					activecurves[i].dot = new createjs.Shape();
 					activecurves[i].dot.graphics.beginFill(color)
 					.drawCircle(0, 0, 2.5);
@@ -496,7 +521,7 @@ function tick() {
 			activecurves[i].beaty = gotoy;
 			activecurves[i].heartbeat.graphics.setStrokeStyle(life_strokeStyle)
 			.beginStroke(beatcolor)
-			//.beginStroke("rgba(255, 255, 110, .5)")
+			.beginStroke("rgba(255, 255, 110, .5)")
 			.moveTo(mrx, beaty)
 			.lineTo(x, gotoy);
 		}
@@ -744,7 +769,7 @@ function death(i, curve) {
 	}
 
 	if (curve.month > monthLabel) {
-			monthLabel = curve.month;
+    monthLabel = curve.month;
 	}
 
 	updateLabels();
@@ -794,7 +819,7 @@ function removeCurve(i, curve) {
 
 	updateLabels();
 
-	var dotColor = i > 5 ? curve.afterlifecolor : curve.afterlifecolor.slice(0, -4)+"1)";
+	var dotColor = i > total_curves ? curve.afterlifecolor : curve.afterlifecolor.slice(0, -4)+"1)";
 
 	var temp_dot = new createjs.Shape();
 	temp_dot
@@ -802,7 +827,7 @@ function removeCurve(i, curve) {
 	.drawCircle(xscale(curve.altage), h / 2, 2.5);
 	stage.addChild(temp_dot);
 
-	if (i < 5) {
+	if (i < 250) {
 		if (typeof introTtip[1] === "undefined") {
 			introTtip[1] = [];
 		}
@@ -838,7 +863,7 @@ function removeCurve(i, curve) {
 		}
 	}
 
-	if (i === 4) {
+	if (i === 250) {
 		stageFader.fadeStage();
 	}
 
@@ -1573,6 +1598,7 @@ function paintNewCanvas(passBeziers) {
 		var bezier = [passBeziers[i].b1, passBeziers[i].b2];	
 		context.lineWidth = life_strokeStyle;
 		context.strokeStyle = life_strokeColor[Math.floor(Math.random()*(life_strokeColor.length-1))];
+    context.BoxBlurFilter('2','2','2');
 		context.beginPath();
 		context.moveTo(bezier[0][0].x, bezier[0][0].y)
 		context.bezierCurveTo(bezier[0][1].x, bezier[0][1].y, bezier[0][2].x, bezier[0][2].y, bezier[0][3].x, bezier[0][3].y);
@@ -1580,6 +1606,7 @@ function paintNewCanvas(passBeziers) {
 
 		context.lineWidth = afterlife_strokeStyle;
 		context.strokeStyle = afterlife_strokeColor[Math.floor(Math.random()*(afterlife_strokeColor.length-1))];
+    context.boxblurfilter('2','2','2');
 		context.beginPath();
 		context.moveTo(bezier[1][0].x, bezier[1][0].y)
 		context.bezierCurveTo(bezier[1][1].x, bezier[1][1].y, bezier[1][2].x, bezier[1][2].y, bezier[1][3].x, bezier[1][3].y);
